@@ -1,0 +1,47 @@
+app:
+  name: ton-gram-price-predictor
+  env: dev
+  timezone: UTC
+
+logging:
+  level: INFO
+  json: false
+  redact_keys: ["api_key", "secret", "token", "authorization"]
+
+data:
+  cache_dir: data/cache
+  raw_dir: data/raw
+  history_days: 720
+  resample: "1h"
+
+sources:
+  tonapi:
+    base_url: https://tonapi.io/v2
+    api_key_env: TONAPI_KEY
+    rate_limit_per_min: 60
+  coingecko:
+    base_url: https://api.coingecko.com/api/v3
+    api_key_env: COINGECKO_API_KEY
+    rate_limit_per_min: 30
+  binance_spot:
+    base_url: https://api.binance.com
+    symbol: TONUSDT
+    interval: 1h
+
+features:
+  windows: [6, 24, 72, 168]
+  indicators: [ema, rsi, macd, atr, obv, vwap_dev]
+  onchain: [active_addresses, txn_count, staking_ratio]
+
+model:
+  primary: lightgbm_quantile
+  ensemble_weights:
+    lightgbm_quantile: 0.6
+    ridge_arima: 0.4
+  horizons_hours: [1, 6, 24, 168]
+
+backtest:
+  start: "2024-01-01"
+  end:   "2025-12-31"
+  fee_bps: 10
+  slippage_bps: 5
